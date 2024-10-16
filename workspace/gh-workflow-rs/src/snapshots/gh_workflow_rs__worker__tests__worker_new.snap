@@ -1,0 +1,15 @@
+---
+source: workspace/gh-workflow-rs/src/worker.rs
+expression: generated
+---
+name: Test Workflow
+on:
+- event: push
+  branches:
+  - main
+jobs:
+  build:
+    runs-on:
+    - windows
+    steps:
+    - run: echo Hello World

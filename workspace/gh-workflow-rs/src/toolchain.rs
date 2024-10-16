@@ -25,7 +25,7 @@ impl RustToolchain {
 
                 // TODO: expose as typed methods
                 Step::default().uses("actions/checkout@v2".to_string()),
-                Step::default().uses("actions-rs/toolchain@v1".to_string()).with(),
+                Step::default().uses("actions-rs/toolchain@v1".to_string()),
 
                 //
             ],
