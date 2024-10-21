@@ -58,9 +58,11 @@ pub struct Workflow {
     pub run_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub on: Option<WorkflowOn>,
-    pub jobs: IndexMap<String, Job>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub permissions: Option<Permissions>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub concurrency: Option<Concurrency>,
+    pub jobs: IndexMap<String, Job>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub defaults: Option<Defaults>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -97,6 +99,7 @@ impl Workflow {
         Self {
             name: Some(name),
             on: Default::default(),
+            permissions: Default::default(),
             run_name: Default::default(),
             jobs: Default::default(),
             concurrency: Default::default(),
@@ -106,6 +109,7 @@ impl Workflow {
             timeout_minutes: Default::default(),
         }
     }
+
     pub fn to_string(&self) -> Result<String> {
         Ok(serde_yaml::to_string(self)?)
     }
@@ -153,6 +157,13 @@ pub struct EventConfig {
     pub paths_ignore: Option<Vec<String>>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum Need {
+    Single(String),
+    Multiple(Vec<String>),
+}
+
 #[derive(Debug, Setters, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
 #[serde(rename_all = "kebab-case")]
 #[setters(strip_option)]
@@ -160,17 +171,25 @@ pub struct Job {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub runs_on: Option<JobRunsOn>,
+    pub uses: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub strategy: Option<Strategy>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub steps: Vec<Step>,
+    pub env: Option<IndexMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub container: Option<Container>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub needs: Option<Vec<String>>,
+    pub needs: Option<Need>,
+    #[serde(rename = "if", skip_serializing_if = "Option::is_none")]
+    pub if_condition: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub permissions: Option<Permissions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub runs_on: Option<JobRunsOn>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub defaults: Option<Defaults>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strategy: Option<Strategy>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub steps: Option<Vec<Step>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub container: Option<Container>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub environment: Option<Environment>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -180,15 +199,9 @@ pub struct Job {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timeout_minutes: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub if_condition: Option<Expression>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub services: Option<IndexMap<String, Container>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub secrets: Option<IndexMap<String, Secret>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub defaults: Option<Defaults>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub env: Option<IndexMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub continue_on_error: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -211,19 +224,19 @@ pub enum JobRunsOn {
 #[setters(strip_option)]
 pub struct Step {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "if", skip_serializing_if = "Option::is_none")]
+    pub if_condition: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uses: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub env: Option<IndexMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub with: Option<IndexMap<String, Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub env: Option<IndexMap<String, String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub if_condition: Option<Expression>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timeout_minutes: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -328,10 +341,6 @@ pub struct Permissions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub contents: Option<PermissionLevel>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub issues: Option<PermissionLevel>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub pull_requests: Option<PermissionLevel>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub deployments: Option<PermissionLevel>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub checks: Option<PermissionLevel>,
@@ -339,6 +348,10 @@ pub struct Permissions {
     pub statuses: Option<PermissionLevel>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub packages: Option<PermissionLevel>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pull_requests: Option<PermissionLevel>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub issues: Option<PermissionLevel>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pages: Option<PermissionLevel>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -356,14 +369,21 @@ pub enum PermissionLevel {
     None,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(untagged, rename_all = "kebab-case")]
+pub enum MatrixType {
+    Map(IndexMap<String, Vec<String>>),
+    String(String),
+}
+
 #[derive(Debug, Setters, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
 #[serde(rename_all = "kebab-case")]
 #[setters(strip_option)]
 pub struct Strategy {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub matrix: Option<IndexMap<String, Vec<String>>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub fail_fast: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub matrix: Option<MatrixType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_parallel: Option<u32>,
 }
