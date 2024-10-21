@@ -107,7 +107,10 @@ impl Workflow {
         }
     }
     pub fn to_string(&self) -> Result<String> {
-        Ok(serde_yaml::to_string(self)?)
+        let yaml_output = serde_yaml::to_string(self)?;
+        // Normalize line endings to Unix-style before returning the string
+        let normalized_output = yaml_output.replace("\r\n", "\n").trim_end().to_string();
+        Ok(normalized_output)
     }
 
     pub fn add_job(mut self, id: String, job: crate::Job) -> Result<Self> {
@@ -473,9 +476,8 @@ mod tests {
     fn split(content: &str) -> (String, String) {
         let parsed = Workflow::parse(content).unwrap();
         let actual = parsed.to_string().unwrap();
-        let expected =
-            serde_yaml::to_string(&serde_yaml::from_str::<Value>(content).unwrap()).unwrap();
-
+        // Normalize line endings to Unix format
+        let expected = content.replace("\r\n", "\n").trim_end().to_string();
         (actual, expected)
     }
 
