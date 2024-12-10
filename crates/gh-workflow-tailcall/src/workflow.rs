@@ -24,14 +24,14 @@ pub struct Workflow {
 
     /// When enabled, a benchmark job is added to the workflow.
     pub benchmarks: bool,
-    
+
     /// When enabled, auto-commits lint and fmt fixes on PRs.
-    pub auto_fix_lint_fmt: bool,
+    pub auto_fix: bool,
 }
 
 impl Default for Workflow {
     fn default() -> Self {
-        Self { auto_release: false, name: "CI".into(), benchmarks: false, auto_fix_lint_fmt: false }
+        Self { auto_release: false, name: "CI".into(), benchmarks: false, auto_fix: false }
     }
 }
 
@@ -128,7 +128,7 @@ impl From<Workflow> for GHWorkflow {
         }
 
         // Add auto-fix job if enabled
-        if value.auto_fix_lint_fmt {
+        if value.auto_fix {
             let lint_and_fmt_fix = lint_and_fmt_fix_job();
             workflow = workflow.add_job("auto-fix-lint-fmt", lint_and_fmt_fix);
         }
