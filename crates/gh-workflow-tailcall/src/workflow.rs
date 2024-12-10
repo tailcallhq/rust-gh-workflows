@@ -145,7 +145,6 @@ fn lint_and_fmt_fix_job() -> Job {
             Toolchain::default()
                 .add_stable()
                 .add_nightly()
-                .add_clippy()
                 .add_fmt(),
         )
         .add_step(
@@ -153,12 +152,6 @@ fn lint_and_fmt_fix_job() -> Job {
                 .nightly()
                 .args("") // Run cargo fmt (without --check to fix)
                 .name("Cargo Fmt (Fix)"),
-        )
-        .add_step(
-            Cargo::new("clippy")
-                .nightly()
-                .args("--fix --all-features --workspace")
-                .name("Cargo Clippy (Fix)"),
         )
         .add_step(Step::run("git add . && git commit -m 'fix: auto-fix lint and fmt'"))
         .add_step(Step::run("git push"))
