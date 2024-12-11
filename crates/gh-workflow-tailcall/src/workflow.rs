@@ -139,6 +139,7 @@ impl From<Workflow> for GHWorkflow {
 
 fn lint_and_fmt_fix_job() -> Job {
     Job::new("Auto Fix Lint and Fmt")
+        .permissions(Permissions::default().contents(Level::Write))
         .cond(Context::github().event_name().eq("pull_request".into())) // Ensure it's a PR
         .add_step(Step::checkout())
         .add_step(
@@ -153,8 +154,15 @@ fn lint_and_fmt_fix_job() -> Job {
                 .args("") // Run cargo fmt (without --check to fix)
                 .name("Cargo Fmt (Fix)"),
         )
-        .add_step(Step::run("git add . && git commit -m 'fix: auto-fix lint and fmt'"))
-        .add_step(Step::run("git push"))
+        .add_step(Step::run(r#"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            PR_NUMBER=$(gh pr view --json number -q .number)
+            git add .
+            git commit -m "style: apply automatic formatting fixes (#${PR_NUMBER})"\
+                        -m "Applied automatic formatting fixes via gh-workflow-tailcall"
+            git push
+        "#))
 }
 
 fn release_pr_job(cond: Context<bool>, build: &Job, permissions: Permissions) -> Job {
