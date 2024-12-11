@@ -130,8 +130,9 @@ impl From<Workflow> for GHWorkflow {
 
         // Add auto-fix job if enabled
         if value.auto_fix {
+            let is_pr = Context::github().event_name().eq("pull_request".into());
             let lint_and_fmt_fix = lint_and_fmt_fix_job();
-            workflow = workflow.add_job("auto-fix-lint-fmt", lint_and_fmt_fix);
+            workflow = workflow.add_job("auto-fix-lint-fmt", lint_and_fmt_fix.cond(is_pr));
         }
 
         workflow
