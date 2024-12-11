@@ -159,8 +159,7 @@ fn lint_and_fmt_fix_job() -> Job {
             git config user.email "github-actions[bot]@users.noreply.github.com"
             PR_NUMBER=$(gh pr view --json number -q .number)
             git add .
-            git commit -m "style: apply automatic formatting fixes (#${PR_NUMBER})"\
-                        -m "Applied automatic formatting fixes via gh-workflow-tailcall"
+            git commit -m "style: Applied automatic formatting fixes via gh-workflow-tailcall"
             git push
         "#))
 }
